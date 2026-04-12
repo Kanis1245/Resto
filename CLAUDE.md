@@ -1,104 +1,91 @@
+@AGENTS.md
+
 # CLAUDE.md — Resto
 
-This file provides guidance for AI assistants (Claude Code and others) working in this repository.
+Application de livraison de repas conçue pour rivaliser avec Gozem Food en Afrique de l'Ouest et Centrale.
 
-## Project Overview
+## Stack Technique
 
-**Resto** is a restaurant management/food-service application (French: *application de restauration*).
+- **Framework**: Next.js 16 (App Router, TypeScript)
+- **Styles**: Tailwind CSS v4
+- **Base de données**: SQLite (dev) via Prisma 7 + @prisma/adapter-libsql
+- **Auth**: JWT custom avec jose (cookies httpOnly)
+- **État client**: Zustand (panier)
+- **Validation**: Zod v4
 
-- **Repository**: `kanis1245/resto`
-- **Language**: French is the documented/user-facing language of the project
-- **Status**: Greenfield — no source code has been committed yet
-
----
-
-## Repository Structure
+## Architecture
 
 ```
-Resto/
-├── CLAUDE.md         # This file
-└── README.md         # Project summary
+src/
+├── app/
+│   ├── (auth)/          # Connexion, inscription
+│   ├── (client)/        # App client: restaurants, panier, commandes, profil
+│   ├── (restaurant)/    # Dashboard restaurateur
+│   ├── api/             # Route handlers REST
+│   └── actions/         # Server Actions
+├── components/
+│   ├── ui/              # Composants de base (bouton, input, card...)
+│   ├── layout/          # Header, BottomNav, Providers
+│   ├── restaurant/      # CarteRestaurant, FiltreCuisine, CarteArticleMenu
+│   ├── cart/            # BoutonPanier, ArticlePanierItem
+│   └── order/           # SuiviCommande (SSE temps réel)
+└── lib/
+    ├── prisma.ts         # Client Prisma (singleton)
+    ├── auth.ts           # Sessions JWT
+    ├── cart-store.ts     # Zustand panier (localStorage)
+    ├── constants.ts      # Cuisines, statuts, villes
+    └── utils.ts          # formatPrix (FCFA), slugifier, etc.
 ```
 
-As the project is built out, this section should be updated to reflect the actual directory layout (e.g. `src/`, `api/`, `frontend/`, `tests/`, etc.).
+## Setup
 
----
+```bash
+# 1. Installer les dépendances
+npm install
 
-## Development Setup
+# 2. Configurer l'environnement
+cp .env.example .env
+# Éditer .env avec le bon DATABASE_URL (chemin absolu)
 
-> Update this section as soon as a technology stack and tooling are chosen.
+# 3. Créer la base de données
+npx prisma migrate dev --name init
 
-Typical steps to document here:
-1. Prerequisites (Node.js version, Python version, Docker, etc.)
-2. `git clone` + dependency installation command
-3. Environment variables (`.env` setup from `.env.example`)
-4. Database setup / migrations
-5. How to run the development server
-6. How to run tests
+# 4. Insérer les données de test
+npx tsx prisma/seed.ts
 
----
+# 5. Lancer le serveur
+npm run dev
+```
 
-## Tech Stack
+## Comptes de Test (après seed)
 
-> To be defined. Recommended to record choices here as they are made.
+| Rôle         | Téléphone       | Mot de passe |
+|-------------|-----------------|--------------|
+| Client      | +237677000001   | password123  |
+| Restaurateur | +237699000002  | password123  |
+| Restaurateur | +237699000001  | password123  |
 
-Possible areas to document:
-- **Backend**: framework, language, runtime
-- **Frontend**: framework, build tool
-- **Database**: engine, ORM/query library
-- **Auth**: strategy and library
-- **Deployment**: hosting platform, containerization
+## Variables d'Environnement
 
----
+```env
+DATABASE_URL=file:///chemin/absolu/vers/dev.db
+JWT_SECRET=votre-cle-secrete
+```
 
-## Conventions
+## API Routes
 
-### Git
+- `POST /api/commandes` — Passer une commande
+- `GET /api/commandes` — Historique commandes
+- `GET /api/commandes/[id]` — Détail commande
+- `PUT /api/commandes/[id]` — Mettre à jour le statut
+- `GET /api/commandes/[id]/stream` — SSE suivi temps réel
+- `POST /api/menu` — Créer un article menu
+- `PUT /api/menu/[id]` — Modifier un article
+- `DELETE /api/menu/[id]` — Supprimer un article
+- `PUT /api/restaurants/[id]` — Modifier les infos restaurant
+- `POST /api/categories` — Créer une catégorie menu
 
-- Development branch for AI-assisted work: `claude/add-claude-documentation-Hh9PN`
-- Push with `git push -u origin <branch-name>`
-- Write clear, descriptive commit messages in English or French (be consistent once chosen)
-- Never force-push to `main`
-
-### Code Style
-
-> Fill in once linting/formatting tooling is configured.
-
-- Agree on a formatter (Prettier, Black, etc.) and enforce it via a config file committed to the repo
-- Agree on a linter (ESLint, Flake8, etc.) and commit its config
-- Run linting before committing (add a pre-commit hook or CI step)
-
-### Naming
-
-- Keep names consistent with the domain language (restaurant, menu, commande, table, etc.)
-- Prefer explicit names over abbreviations
-- File names: use `kebab-case` for files, `PascalCase` for classes/components (adjust once a framework is chosen)
-
-### Environment Variables
-
-- Never commit secrets or `.env` files
-- Maintain a `.env.example` file listing all required variables with placeholder values
-- Document each variable's purpose inline in `.env.example`
-
-### Testing
-
-- Write tests alongside new features, not after
-- Target meaningful coverage on business logic / API routes
-- Document how to run the test suite in this file once configured
-
----
-
-## AI Assistant Notes
-
-- **No source code exists yet**: All implementation is still to come. Do not assume any file structure or library is already in place.
-- **Language**: The project description is in French. Clarify with the user whether code comments, variable names, and commit messages should be in French or English.
-- **Scope**: This is a restaurant application — keep domain concepts (menus, orders, tables, reservations, staff, etc.) in mind when designing features.
-- **Update this file**: Whenever a major architectural decision is made (framework chosen, database selected, API design established), update this CLAUDE.md to reflect the current state of the project. It should always represent the most up-to-date picture of the codebase.
-
----
-
-## GitHub Integration
+## GitHub
 
 - Repo: `kanis1245/resto`
-- Use MCP GitHub tools (`mcp__github__*`) for all GitHub interactions (PRs, issues, comments)
-- Do NOT create pull requests unless the user explicitly requests one
+- Branche de développement: `claude/build-intuitive-app-rFKRk`

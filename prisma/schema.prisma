@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  CLIENT
+  RESTAURATEUR
+  ADMIN
+}
+
+enum TypeCuisine {
+  AFRICAIN
+  FAST_FOOD
+  PIZZA
+  POULET
+  POISSON
+  BURGER
+  SHAWARMA
+  AUTRE
+}
+
+enum StatutCommande {
+  EN_ATTENTE
+  CONFIRMEE
+  EN_PREPARATION
+  PRETE
+  EN_LIVRAISON
+  LIVREE
+  ANNULEE
+}
+
+model Utilisateur {
+  id           String   @id @default(cuid())
+  email        String?  @unique
+  telephone    String?  @unique
+  motDePasseHash String
+  nom          String
+  role         Role     @default(CLIENT)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  commandes    Commande[]
+  restaurant   Restaurant?
+  adresses     AdresseClient[]
+  avis         Avis[]
+}
+
+model Restaurant {
+  id               String      @id @default(cuid())
+  slug             String      @unique
+  nom              String
+  description      String?
+  adresse          String
+  ville            String      @default("Douala")
+  latitude         Float?
+  longitude        Float?
+  telephone        String?
+  logoUrl          String?
+  imageUrl         String?
+  cuisine          TypeCuisine @default(AFRICAIN)
+  estOuvert        Boolean     @default(true)
+  fraisLivraison   Int         @default(500)
+  tempsLivraison   Int         @default(30)
+  noteMoyenne      Float       @default(0)
+  nombreAvis       Int         @default(0)
+  estActif         Boolean     @default(true)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  proprietaireId   String      @unique
+  proprietaire     Utilisateur @relation(fields: [proprietaireId], references: [id])
+  categories       CategorieMenu[]
+  commandes        Commande[]
+  avis             Avis[]
+}
+
+model CategorieMenu {
+  id           String        @id @default(cuid())
+  nom          String
+  ordre        Int           @default(0)
+  restaurantId String
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  articles     ArticleMenu[]
+}
+
+model ArticleMenu {
+  id             String         @id @default(cuid())
+  nom            String
+  description    String?
+  prix           Int
+  imageUrl       String?
+  estDisponible  Boolean        @default(true)
+  categorieId    String
+  categorie      CategorieMenu  @relation(fields: [categorieId], references: [id], onDelete: Cascade)
+  lignesCommande LigneCommande[]
+}
+
+model Commande {
+  id                 String         @id @default(cuid())
+  numero             String         @unique
+  statut             StatutCommande @default(EN_ATTENTE)
+  clientId           String
+  restaurantId       String
+  adresseLivraison   String
+  latitudeLivraison  Float?
+  longitudeLivraison Float?
+  sousTotal          Int
+  fraisLivraison     Int
+  total              Int
+  notesSpeciales     String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  client     Utilisateur    @relation(fields: [clientId], references: [id])
+  restaurant Restaurant     @relation(fields: [restaurantId], references: [id])
+  lignes     LigneCommande[]
+  avis       Avis?
+}
+
+model LigneCommande {
+  id           String      @id @default(cuid())
+  commandeId   String
+  articleId    String
+  quantite     Int
+  prixUnitaire Int
+  sousTotal    Int
+  notes        String?
+
+  commande Commande    @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  article  ArticleMenu @relation(fields: [articleId], references: [id])
+}
+
+model Avis {
+  id           String     @id @default(cuid())
+  note         Int
+  commentaire  String?
+  commandeId   String     @unique
+  clientId     String
+  restaurantId String
+  createdAt    DateTime   @default(now())
+
+  commande   Commande    @relation(fields: [commandeId], references: [id])
+  client     Utilisateur @relation(fields: [clientId], references: [id])
+  restaurant Restaurant  @relation(fields: [restaurantId], references: [id])
+}
+
+model AdresseClient {
+  id           String      @id @default(cuid())
+  libelle      String
+  adresse      String
+  latitude     Float?
+  longitude    Float?
+  estDefaut    Boolean     @default(false)
+  utilisateurId String
+  utilisateur  Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+}
